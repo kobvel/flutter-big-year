@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "761770680254",
+    "project_id": "deadliny-a8b76",
+    "storage_bucket": "deadliny-a8b76.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761770680254:android:5723a7d03e00f54689a3ef",
+        "android_client_info": {
+          "package_name": "com.horizon.horizon_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "761770680254-5kdo5mc9bol85ot9m4ubr8g3f1bm0kg3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAbto9m65DFuOmMqJRLthRyk9kjBjqkMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "761770680254-5kdo5mc9bol85ot9m4ubr8g3f1bm0kg3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "761770680254-284c94ap4p6kagpln9qivhke7eepdlqr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bigyear.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
