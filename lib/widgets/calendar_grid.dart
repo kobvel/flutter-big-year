@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/event_model.dart';
-import '../providers/events_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/drag_selection_manager.dart';
 import 'calendar_day_cell.dart';
 
@@ -30,12 +30,21 @@ class CalendarGrid extends StatefulWidget {
 class _CalendarGridState extends State<CalendarGrid> {
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
     final daysInMonth = DateTime(widget.year, widget.month + 1, 0).day;
     final firstDayOfMonth = DateTime(widget.year, widget.month, 1);
     final weekdayOfFirst = firstDayOfMonth.weekday;
 
-    // Calculate offset for first day (Monday = 1, Sunday = 7)
-    final firstDayOffset = weekdayOfFirst == 7 ? 0 : weekdayOfFirst;
+    // Calculate offset for first day based on week start preference
+    // weekday: Monday = 1, Tuesday = 2, ..., Sunday = 7
+    final int firstDayOffset;
+    if (settingsProvider.weekStartsOnMonday) {
+      // Week starts Monday: Monday = 0, Tuesday = 1, ..., Sunday = 6
+      firstDayOffset = weekdayOfFirst - 1;
+    } else {
+      // Week starts Sunday: Sunday = 0, Monday = 1, ..., Saturday = 6
+      firstDayOffset = weekdayOfFirst == 7 ? 0 : weekdayOfFirst;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,12 +95,12 @@ class _CalendarGridState extends State<CalendarGrid> {
             }
 
             return Wrap(
-              spacing: 0,
-              runSpacing: 0,
+              spacing: 2,  // Small horizontal gap between days
+              runSpacing: 2,  // Small vertical gap between weeks
               children: cellsWithWidth.map((cell) {
                 return SizedBox(
-                  width: cellWidth,
-                  height: cellWidth,
+                  width: cellWidth - 2,  // Adjust width to account for spacing
+                  height: cellWidth - 2,  // Adjust height to account for spacing
                   child: cell,
                 );
               }).toList(),

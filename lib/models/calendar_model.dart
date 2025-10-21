@@ -7,6 +7,7 @@ class CalendarModel {
   final String emoji;
   final String? color;
   final DateTime? createdAt;
+  final int order;
 
   CalendarModel({
     this.id,
@@ -15,6 +16,7 @@ class CalendarModel {
     required this.emoji,
     this.color,
     this.createdAt,
+    this.order = 0,
   });
 
   factory CalendarModel.fromFirestore(DocumentSnapshot doc) {
@@ -32,6 +34,7 @@ class CalendarModel {
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] as Timestamp).toDate()
           : null,
+      order: map['order'] ?? 0,
     );
   }
 
@@ -44,6 +47,7 @@ class CalendarModel {
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
+      'order': order,
     };
   }
 
@@ -54,6 +58,7 @@ class CalendarModel {
     String? emoji,
     String? color,
     DateTime? createdAt,
+    int? order,
   }) {
     return CalendarModel(
       id: id ?? this.id,
@@ -62,6 +67,7 @@ class CalendarModel {
       emoji: emoji ?? this.emoji,
       color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
+      order: order ?? this.order,
     );
   }
 }

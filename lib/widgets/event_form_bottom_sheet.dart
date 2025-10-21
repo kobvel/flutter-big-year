@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/event_model.dart';
+import '../models/calendar_model.dart';
 import '../providers/events_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/calendars_provider.dart';
+import '../utils/color_mapper.dart';
 
 class EventFormBottomSheet extends StatefulWidget {
   final DateTime startDate;
@@ -28,7 +31,7 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
   late DateTime _selectedEndDate;
   String _selectedEmoji = '📅';
   String _selectedColor = '#3B82F6';
-  String _selectedCalendarId = 'general';
+  String? _selectedCalendarId;
 
   final List<String> _emojiOptions = [
     '📅',
@@ -64,6 +67,34 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
       _selectedEmoji = widget.event!.emoji;
       _selectedColor = widget.event!.categoryColor;
       _selectedCalendarId = widget.event!.calendarId;
+    } else {
+      // For new events, select a calendar intelligently after build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final calendarsProvider = Provider.of<CalendarsProvider>(context, listen: false);
+        final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+
+        if (calendarsProvider.calendars.isEmpty || !mounted) return;
+
+        // Get currently selected calendar IDs from the filter
+        final selectedCalendarIds = eventsProvider.selectedCalendarIds;
+
+        // If there are selected calendars, pick the first one
+        // Otherwise, fall back to the first calendar in the list
+        String? defaultCalendarId;
+        if (selectedCalendarIds.isNotEmpty) {
+          // Find the first selected calendar that still exists
+          defaultCalendarId = selectedCalendarIds.firstWhere(
+            (id) => calendarsProvider.calendars.any((cal) => cal.id == id),
+            orElse: () => calendarsProvider.calendars.first.id!,
+          );
+        } else {
+          defaultCalendarId = calendarsProvider.calendars.first.id;
+        }
+
+        setState(() {
+          _selectedCalendarId = defaultCalendarId;
+        });
+      });
     }
   }
 
@@ -114,6 +145,7 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+    final calendarsProvider = Provider.of<CalendarsProvider>(context, listen: false);
 
     if (authProvider.user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,11 +154,21 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
       return;
     }
 
+    // Ensure a calendar is selected
+    final calendarId = _selectedCalendarId ?? calendarsProvider.calendars.firstOrNull?.id;
+
+    if (calendarId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please create a calendar first')),
+      );
+      return;
+    }
+
     final event = EventModel(
       id: widget.event?.id,
       userId: authProvider.user!.uid,
       title: _titleController.text.trim(),
-      calendarId: _selectedCalendarId,
+      calendarId: calendarId,
       emoji: _selectedEmoji,
       shared: false,
       categoryColor: _selectedColor,
@@ -138,12 +180,22 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
 
     try {
       if (widget.event == null) {
+        // Create new event
         await eventsProvider.createEvent(event);
+
+        // Auto-select the calendar if it's not already selected
+        eventsProvider.ensureCalendarSelected(calendarId);
+
+        if (mounted) {
+          // Return the start date so we can scroll to it
+          Navigator.of(context).pop(_selectedStartDate);
+        }
       } else {
+        // Update existing event
         await eventsProvider.updateEvent(widget.event!.id!, event);
-      }
-      if (mounted) {
-        Navigator.of(context).pop();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -196,15 +248,25 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
         ),
       ),
       child: DraggableScrollableSheet(
-        initialChildSize: 0.7,
+        initialChildSize: 0.85,
         minChildSize: 0.5,
         maxChildSize: 0.95,
+        snap: false,
+        expand: false,
         builder: (context, scrollController) {
+          final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+
           return Form(
             key: _formKey,
             child: ListView(
               controller: scrollController,
-              padding: const EdgeInsets.all(24.0),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: bottomPadding > 0 ? bottomPadding + 24 : 24,
+              ),
               children: [
                 // Handle bar
                 Center(
@@ -362,6 +424,85 @@ class _EventFormBottomSheetState extends State<EventFormBottomSheet> {
                   ],
                 ),
                 const SizedBox(height: 24),
+
+                // Calendar selector
+                Consumer<CalendarsProvider>(
+                  builder: (context, calendarsProvider, child) {
+                    final calendars = calendarsProvider.calendars;
+
+                    if (calendars.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Calendar',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: ButtonTheme(
+                              alignedDropdown: true,
+                              child: DropdownButton<String>(
+                                value: _selectedCalendarId ?? calendars.first.id,
+                                isExpanded: true,
+                                borderRadius: BorderRadius.circular(12),
+                                items: calendars.map((calendar) {
+                                  return DropdownMenuItem<String>(
+                                    value: calendar.id,
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          calendar.emoji,
+                                          style: const TextStyle(fontSize: 20),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            calendar.name,
+                                            style: const TextStyle(fontSize: 15),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (calendar.color != null) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            width: 16,
+                                            height: 16,
+                                            decoration: BoxDecoration(
+                                              color: ColorMapper.parseColor(calendar.color!),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      _selectedCalendarId = newValue;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  },
+                ),
 
                 // Color selector
                 const Text(

@@ -1,0 +1,166 @@
+direction: down
+
+title: Horizon Calendar - What Users Can Do {
+  near: top-center
+  shape: text
+  style.bold: true
+}
+
+# Start
+user: User Opens App {
+  shape: oval
+  style.fill: "#6f97b8"
+}
+
+# First decision
+signin: Sign In with Google {
+  shape: diamond
+  style.fill: "#83b7b8"
+}
+
+user -> signin
+
+# Main actions
+view_calendar: View Calendar {
+  shape: rectangle
+  style.fill: "#90a583"
+}
+
+manage_calendars: Manage Calendars {
+  shape: rectangle
+  style.fill: "#806d8c"
+}
+
+manage_events: Manage Events {
+  shape: rectangle
+  style.fill: "#d4a373"
+}
+
+navigate: Navigate Calendar {
+  shape: rectangle
+  style.fill: "#c8a5b3"
+}
+
+signin -> view_calendar: Signed in
+
+# View Calendar branches
+view_calendar -> manage_calendars: Can manage calendars
+view_calendar -> manage_events: Can manage events
+view_calendar -> navigate: Can navigate
+
+# Manage Calendars actions
+create_cal: Create New Calendar {
+  shape: rectangle
+  description: "• Choose name\n• Pick emoji\n• Select color"
+}
+
+edit_cal: Edit Calendar {
+  shape: rectangle
+  description: "• Change name\n• Update emoji\n• Change color"
+}
+
+delete_cal: Delete Calendar {
+  shape: rectangle
+}
+
+reorder_cal: Reorder Calendars {
+  shape: rectangle
+  description: "Drag and drop"
+}
+
+filter_cal: Filter Calendars {
+  shape: rectangle
+  description: "Show/hide specific calendars"
+}
+
+manage_calendars -> create_cal: Can create
+manage_calendars -> edit_cal: Can edit
+manage_calendars -> delete_cal: Can delete
+manage_calendars -> reorder_cal: Can reorder
+manage_calendars -> filter_cal: Can filter
+
+# Manage Events actions
+create_event: Create Event {
+  shape: rectangle
+}
+
+edit_event: Edit Event {
+  shape: rectangle
+}
+
+delete_event: Delete Event {
+  shape: rectangle
+}
+
+manage_events -> create_event: Can create
+manage_events -> edit_event: Can edit
+manage_events -> delete_event: Can delete
+
+# Create event branches
+create_single: Single-Day Event {
+  shape: rectangle
+  description: "Tap empty date"
+}
+
+create_multi: Multi-Day Event {
+  shape: rectangle
+  description: "Long-press and drag\nacross dates"
+}
+
+create_event -> create_single: Option 1
+create_event -> create_multi: Option 2
+
+# Event form
+event_form: Event Form {
+  shape: page
+  description: "• Enter title\n• Choose emoji\n• Select dates\n• Pick calendar\n• Choose color"
+}
+
+create_single -> event_form
+create_multi -> event_form
+
+# Event saved
+event_saved: Event Saved {
+  shape: oval
+  style.fill: "#10B981"
+  description: "• Calendar auto-selected\n• View scrolls to event"
+}
+
+event_form -> event_saved
+
+# Navigate actions
+scroll: Scroll Through Months {
+  shape: rectangle
+  description: "Infinite scroll"
+}
+
+jump_today: Jump to Today {
+  shape: rectangle
+  description: "Today button"
+}
+
+navigate -> scroll: Can scroll
+navigate -> jump_today: Can jump
+
+# Settings
+settings: Change Settings {
+  shape: rectangle
+  style.fill: "#deb168"
+}
+
+week_start: Week Start Day {
+  shape: diamond
+  description: "Monday or Sunday"
+}
+
+view_calendar -> settings: Can configure
+settings -> week_start
+
+# Sign out
+signout: Sign Out {
+  shape: oval
+  style.fill: "#a39088"
+}
+
+view_calendar -> signout: Can sign out
+signout -> user: Returns to start

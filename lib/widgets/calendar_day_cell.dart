@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/event_model.dart';
 import '../providers/events_provider.dart';
 import '../utils/drag_selection_manager.dart';
+import '../utils/color_mapper.dart';
 
 class CalendarDayCell extends StatefulWidget {
   final DateTime date;
@@ -106,7 +107,7 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
     final isSelectionEnd = isSelected && !isNextSelected;
 
     return GestureDetector(
-        behavior: HitTestBehavior.opaque,
+        behavior: HitTestBehavior.deferToChild,
         // Simple tap
         onTap: () {
           if (!widget.dragManager.isActive) {
@@ -170,24 +171,20 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
             child: Stack(
               clipBehavior: Clip.none, // Allow children to overflow
             children: [
-              // Multi-day event borders (drawn behind everything) - make them tappable
+              // Multi-day event borders (drawn behind everything) - visual only, not tappable
               ...events.where((e) => e.isMultiDay()).map((event) {
                 // Only show border, no background on non-start cells to avoid dimming the title
                 final isStartCell = _isStartDate(event);
                 return Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (widget.onEventTap != null) {
-                        widget.onEventTap!(event);
-                      }
-                    },
+                  child: IgnorePointer(
                     child: _buildMultiDayEventBorder(event, showBackground: isStartCell),
                   ),
                 );
               }),
 
               // Day number - centered with today highlight
-              Center(
+              IgnorePointer(
+                child: Center(
                 child: isToday
                     ? Container(
                         padding: const EdgeInsets.all(8),
@@ -225,6 +222,7 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
                           fontWeight: FontWeight.normal,
                         ),
                       ),
+                ),
               ),
 
               // Single day events (stacked on top of each other)
@@ -249,32 +247,39 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
                   final titleMaxWidth = (widget.cellWidth * maxCells) - 8;
 
                   return Positioned(
-                    top: 2,
-                    left: 2,
+                    top: 0,
+                    left: 0,
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) {}, // Capture tap to prevent parent from handling
                       onTap: () {
                         if (widget.onEventTap != null) {
                           widget.onEventTap!(event);
                         }
                       },
                       child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: titleMaxWidth,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _parseColor(event.categoryColor).withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text(
-                          '${event.emoji} ${event.title}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                        // Add transparent padding to increase tap area
+                        padding: const EdgeInsets.all(2),
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: titleMaxWidth,
+                            minHeight: 18, // Ensure minimum tap target
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _parseColor(event.categoryColor).withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '${event.emoji} ${event.title}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ),
@@ -286,7 +291,9 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
               // Past day strike-through effect
               if (isPast)
                 Positioned.fill(
-                  child: CustomPaint(painter: StrikeThroughPainter()),
+                  child: IgnorePointer(
+                    child: CustomPaint(painter: StrikeThroughPainter()),
+                  ),
                 ),
             ],
             ),
@@ -332,6 +339,8 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
       mainAxisSize: MainAxisSize.min,
       children: displayEvents.map((event) {
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) {}, // Capture tap to prevent parent from handling
           onTap: () {
             if (widget.onEventTap != null) {
               widget.onEventTap!(event);
@@ -389,11 +398,7 @@ class _CalendarDayCellState extends State<CalendarDayCell> {
   }
 
   Color _parseColor(String colorString) {
-    try {
-      return Color(int.parse(colorString.replaceAll('#', '0xFF')));
-    } catch (e) {
-      return Colors.blue;
-    }
+    return ColorMapper.parseColor(colorString);
   }
 }
 

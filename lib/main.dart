@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/events_provider.dart';
+import 'providers/calendars_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/calendar_screen.dart';
 
@@ -24,6 +26,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => EventsProvider()),
+        ChangeNotifierProvider(create: (_) => CalendarsProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: MaterialApp(
         title: 'Horizon Calendar',

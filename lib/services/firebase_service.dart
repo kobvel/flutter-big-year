@@ -23,8 +23,9 @@ class FirebaseService {
             snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList());
   }
 
-  Future<void> createEvent(EventModel event) async {
-    await _firestore.collection('events').add(event.toMap());
+  Future<String> createEvent(EventModel event) async {
+    final docRef = await _firestore.collection('events').add(event.toMap());
+    return docRef.id;
   }
 
   Future<void> updateEvent(String eventId, EventModel event) async {
@@ -49,8 +50,9 @@ class FirebaseService {
             .toList());
   }
 
-  Future<void> createCalendar(CalendarModel calendar) async {
-    await _firestore.collection('calendars').add(calendar.toMap());
+  Future<String> createCalendar(CalendarModel calendar) async {
+    final docRef = await _firestore.collection('calendars').add(calendar.toMap());
+    return docRef.id;
   }
 
   Future<void> updateCalendar(String calendarId, CalendarModel calendar) async {

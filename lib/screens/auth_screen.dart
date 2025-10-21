@@ -48,6 +48,20 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      await authProvider.signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In Error: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -147,6 +161,50 @@ class _AuthScreenState extends State<AuthScreen> {
                     _isSignUp
                         ? 'Already have an account? Sign In'
                         : 'Don\'t have an account? Sign Up',
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Divider with "OR"
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey[400])),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey[400])),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Google Sign-In button
+                OutlinedButton.icon(
+                  onPressed: authProvider.isLoading ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  icon: Image.network(
+                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                    height: 24,
+                    width: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.login, size: 24);
+                    },
+                  ),
+                  label: const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ],
